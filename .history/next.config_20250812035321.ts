@@ -10,8 +10,7 @@ const nextConfig: NextConfig = {
       { module: /@supabase\/realtime-js/, message: /Critical dependency/ },
     ];
     return config;
-  }, 
+  },
 };
 
 export default nextConfig;
- 
