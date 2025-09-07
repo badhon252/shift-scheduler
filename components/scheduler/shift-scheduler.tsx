@@ -142,12 +142,17 @@ export function ShiftScheduler() {
 
     // Check if this date actually exists
     const testDate = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
-    if (
-      testDate.getFullYear() !== year ||
-      testDate.getMonth() !== month - 1 ||
-      testDate.getDate() !== day
-    ) {
-      console.error("Invalid date:", date, "- this date does not exist");
+    const testDateStr = `${testDate.getFullYear()}-${String(
+      testDate.getMonth() + 1
+    ).padStart(2, "0")}-${String(testDate.getDate()).padStart(2, "0")}`;
+
+    if (testDateStr !== date) {
+      console.error(
+        "Invalid date:",
+        date,
+        "- date mismatch after reconstruction:",
+        testDateStr
+      );
       setError(`Invalid date: ${date}. This date does not exist.`);
       return;
     }
