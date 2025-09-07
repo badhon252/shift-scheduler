@@ -280,7 +280,7 @@ export function ShiftScheduler() {
     }
   };
 
-  if (loading) {
+  if (false) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">

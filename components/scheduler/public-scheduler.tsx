@@ -9,6 +9,14 @@ import { ChevronLeft, ChevronRight, Calendar, Info, LogIn } from "lucide-react";
 import { ShiftCalendar } from "./shift-calendar";
 import { MonthlySummary } from "./monthly-summary";
 import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function PublicScheduler() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -146,38 +154,40 @@ export function PublicScheduler() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="py-4">
         <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-            {members.map((m) => (
-              <Button
-                key={m.id}
-                variant={selectedMemberId === m.id ? "default" : "outline"}
-                className="justify-start h-auto p-2"
-                onClick={() => setSelectedMemberId(m.id)}
+          <div className="flex items-center justify-between">
+            <CardTitle>Team Members</CardTitle>
+            <div className="">
+              <Select
+                value={selectedMemberId || undefined}
+                onValueChange={(value: string) => setSelectedMemberId(value)}
               >
-                <div className="text-left">
-                  <div className="text-sm font-medium">{m.name}</div>
-                  <div className="text-[10px] opacity-70">
-                    ID: {m.employee_id}
-                  </div>
-                </div>
-              </Button>
-            ))}
+                <SelectTrigger className="md:w-[300px] w-[200px] py-6 cursor-pointer">
+                  <SelectValue placeholder="Select a team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {members.map((m) => (
+                      <SelectItem
+                        key={m.id}
+                        value={m.id}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center md:gap-4 gap-2 md:px-6">
+                          <span className="font-medium">{m.name}</span>
+                          <span className="text-xs text-gray-500">
+                            ID: {m.employee_id}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          {members.length === 0 && (
-            <Alert className="mt-4 border-yellow-300 bg-yellow-50">
-              <AlertDescription className="text-yellow-900 flex items-start gap-2">
-                <Info className="h-4 w-4 mt-0.5" />
-                No members available yet. Once the admin adds members, they will
-                appear here.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
+        </CardHeader>
       </Card>
 
       {selectedMemberId && (

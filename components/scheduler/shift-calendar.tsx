@@ -25,6 +25,7 @@ export function ShiftCalendar({
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileView, setMobileView] = useState<"grid" | "list">("grid");
+  const [selectedDates, setSelectedDates] = useState<number[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -101,7 +102,7 @@ export function ShiftCalendar({
   const getShiftTypeInfo = (name: string): ShiftTypeDef | undefined =>
     SHIFT_TYPES.find((t) => t.name === name);
 
-  const handleDayClick = (day: number) => {
+  const handleDayClick = (day: number, e: React.MouseEvent) => {
     if (!canEdit) return;
 
     if (day < 1 || day > daysInMonth) {
@@ -117,22 +118,47 @@ export function ShiftCalendar({
       return;
     }
 
-    console.log(`Clicked on day ${day}, date: ${dateStr}`);
-    setActiveDropdown(activeDropdown === day ? null : day);
-  };
-
-  const handleShiftSelect = (day: number, shiftType: string) => {
-    const dateStr = dateStrFor(day);
-    if (!dateStr) {
-      console.error(`Cannot generate valid date for day ${day}`);
-      return;
+    // Handle selection with Ctrl/Cmd key
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedDates((prev) => {
+        if (prev.includes(day)) {
+          return prev.filter((d) => d !== day);
+        } else {
+          return [...prev, day];
+        }
+      });
+    } else {
+      // Regular click behavior - toggle dropdown and clear selections
+      setSelectedDates([]);
+      setActiveDropdown(activeDropdown === day ? null : day);
     }
 
     console.log(
-      `Selecting shift for day ${day}, date: ${dateStr}, type: ${shiftType}`
+      `Clicked on day ${day}, date: ${dateStr}, multiSelect: ${
+        e.ctrlKey || e.metaKey
+      }`
     );
-    onShiftUpdate?.(dateStr, shiftType);
+  };
+
+  const handleShiftSelect = async (day: number, shiftType: string) => {
+    // If there are selected dates, update all of them
+    const daysToUpdate = selectedDates.length > 0 ? selectedDates : [day];
+
+    for (const selectedDay of daysToUpdate) {
+      const dateStr = dateStrFor(selectedDay);
+      if (!dateStr) {
+        console.error(`Cannot generate valid date for day ${selectedDay}`);
+        continue;
+      }
+
+      console.log(
+        `Selecting shift for day ${selectedDay}, date: ${dateStr}, type: ${shiftType}`
+      );
+      await onShiftUpdate?.(dateStr, shiftType);
+    }
+
     setActiveDropdown(null);
+    setSelectedDates([]); // Clear selections after updating
   };
 
   // Create array of all valid days
@@ -219,7 +245,7 @@ export function ShiftCalendar({
                         : "cursor-default",
                       activeDropdown === day ? "ring-2 ring-blue-400" : "",
                     ].join(" ")}
-                    onClick={() => handleDayClick(day)}
+                    onClick={(e) => handleDayClick(day, e)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="text-center">
@@ -420,6 +446,22 @@ export function ShiftCalendar({
     );
   };
 
+  // Add a floating action button for multi-select mode
+  const renderActionButton = () => {
+    if (selectedDates.length === 0) return null;
+
+    return (
+      <div className="fixed bottom-4 right-4 z-30">
+        <button
+          onClick={() => setActiveDropdown(selectedDates[0])}
+          className="bg-purple-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-purple-700 flex items-center gap-2 text-sm"
+        >
+          <span>Update {selectedDates.length} Selected Dates</span>
+        </button>
+      </div>
+    );
+  };
+
   const renderDayCell = (day: number) => {
     const dayData = allDays.find((d) => d.day === day);
     if (!dayData) {
@@ -452,8 +494,9 @@ export function ShiftCalendar({
               ? "cursor-pointer hover:shadow-md active:scale-95"
               : "cursor-default",
             activeDropdown === day ? "ring-2 ring-blue-400" : "",
+            selectedDates.includes(day) ? "ring-2 ring-purple-400" : "",
           ].join(" ")}
-          onClick={() => handleDayClick(day)}
+          onClick={(e) => handleDayClick(day, e)}
         >
           <div className="flex flex-col items-center">
             <div
@@ -502,13 +545,51 @@ export function ShiftCalendar({
             ].join(" ")}
             style={{ maxHeight: "60vh", overflowY: "auto" }}
           >
-            <div className="px-3 py-2 text-sm font-medium text-gray-700 border-b">
-              {isMobile
-                ? `${dayName}, ${currentDate.toLocaleDateString("en-US", {
-                    month: "short",
-                  })} ${day}`
-                : `Select Shift for ${memberName}`}
-              <div className="text-xs text-gray-500">Date: {dateStr}</div>
+            <div className="px-3 py-2 border-b">
+              {selectedDates.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-purple-600">
+                      Update Multiple Dates
+                    </div>
+                    <div className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                      {selectedDates.length} selected
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Days: {selectedDates.sort((a, b) => a - b).join(", ")}
+                  </div>
+                  <div className="text-xs text-purple-500 mt-1">
+                    Selected shifts will be applied to all dates
+                  </div>
+                </>
+              ) : isMobile ? (
+                <>
+                  <div className="text-sm font-medium text-gray-700">
+                    {`${dayName}, ${currentDate.toLocaleDateString("en-US", {
+                      month: "short",
+                    })} ${day}`}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Date: {dateStr}
+                  </div>
+                  <div className="text-xs text-blue-500 mt-1">
+                    Tip: Hold Ctrl/Cmd and click to select multiple dates
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm font-medium text-gray-700">
+                    {`Select Shift for ${memberName}`}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Date: {dateStr}
+                  </div>
+                  <div className="text-xs text-blue-500 mt-1">
+                    Tip: Hold Ctrl/Cmd and click to select multiple dates
+                  </div>
+                </>
+              )}
             </div>
             {SHIFT_TYPES.map((t) => (
               <button
@@ -569,35 +650,49 @@ export function ShiftCalendar({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Schedule for {memberName}</span>
+            <span className="truncate"> {memberName}</span>
           </CardTitle>
-          {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setMobileView(mobileView === "grid" ? "list" : "grid")
-              }
-            >
-              {mobileView === "grid" ? (
-                <List className="h-4 w-4" />
-              ) : (
-                <Grid className="h-4 w-4" />
-              )}
-            </Button>
+          <div className="flex items-center gap-2">
+            {selectedDates.length > 0 && (
+              <div className="text-sm text-purple-600 font-medium mr-2">
+                {selectedDates.length} selected
+              </div>
+            )}
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setMobileView(mobileView === "grid" ? "list" : "grid")
+                }
+              >
+                {mobileView === "grid" ? (
+                  <List className="h-4 w-4" />
+                ) : (
+                  <Grid className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs sm:text-sm text-gray-600">
+            {canEdit
+              ? isMobile
+                ? `Tap any day to assign shifts. ${
+                    mobileView === "grid"
+                      ? "Switch to list view for easier browsing."
+                      : "Switch to grid view for calendar layout."
+                  }`
+                : "Click on any day to assign or change shifts."
+              : "View-only schedule. Colors represent different shift types."}
+          </p>
+          {canEdit && (
+            <p className="text-xs text-purple-600">
+              Hold Ctrl/Cmd and click to select multiple dates for bulk updates
+            </p>
           )}
         </div>
-        <p className="text-xs sm:text-sm text-gray-600">
-          {canEdit
-            ? isMobile
-              ? `Tap any day to assign shifts. ${
-                  mobileView === "grid"
-                    ? "Switch to list view for easier browsing."
-                    : "Switch to grid view for calendar layout."
-                }`
-              : "Click on any day to assign or change shifts."
-            : "View-only schedule. Colors represent different shift types."}
-        </p>
       </CardHeader>
       <CardContent className="p-3 sm:p-6">
         {/* Desktop week headers */}
@@ -616,6 +711,9 @@ export function ShiftCalendar({
 
         {/* Calendar grid */}
         {renderCalendarGrid()}
+
+        {/* Floating action button for multi-select */}
+        {renderActionButton()}
 
         {/* Debug info in development */}
         {/* {process.env.NODE_ENV === "development" && (
@@ -671,6 +769,33 @@ export function ShiftCalendar({
                 ? "Grid view shows 3 days per row for easier tapping. Switch to list view for a different layout."
                 : "List view shows all days vertically. Switch to grid view for traditional calendar layout."}
             </p>
+          </div>
+        )}
+
+        {/* Multi-select action bar */}
+        {selectedDates.length > 0 && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-30 w-full max-w-md px-4">
+            <div className="bg-white rounded-full shadow-lg border border-purple-200 p-2 flex items-center justify-between">
+              <div className="flex items-center gap-2 px-3">
+                <span className="text-sm font-medium text-purple-600">
+                  {selectedDates.length} dates selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSelectedDates([])}
+                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setActiveDropdown(selectedDates[0])}
+                  className="px-4 py-1 bg-purple-600 text-white rounded-full text-sm hover:bg-purple-700 cursor-pointer"
+                >
+                  Update All
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

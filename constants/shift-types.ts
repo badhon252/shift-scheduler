@@ -1,4 +1,9 @@
-export type ShiftTypeDef = { name: string; color: string; bgColor: string; textColor: string }
+export type ShiftTypeDef = {
+  name: string;
+  color: string;
+  bgColor: string;
+  textColor: string;
+};
 
 export const SHIFT_TYPES: ReadonlyArray<ShiftTypeDef> = [
   {
@@ -37,4 +42,4 @@ export const SHIFT_TYPES: ReadonlyArray<ShiftTypeDef> = [
     bgColor: "bg-[#d21904]",
     textColor: "text-white",
   },
-] as const
+] as const;

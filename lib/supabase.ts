@@ -1,73 +1,73 @@
-import { createClient, type Session, type User } from "@supabase/supabase-js"
+import { createClient, type Session, type User } from "@supabase/supabase-js";
 
 export interface Database {
   public: {
     Tables: {
       members: {
         Row: {
-          id: string
-          employee_id: string
-          name: string
-          created_at: string
-          updated_at: string
-        }
+          id: string;
+          employee_id: string;
+          name: string;
+          created_at: string;
+          updated_at: string;
+        };
         Insert: {
-          id?: string
-          employee_id: string
-          name: string
-          created_at?: string
-          updated_at?: string
-        }
+          id?: string;
+          employee_id: string;
+          name: string;
+          created_at?: string;
+          updated_at?: string;
+        };
         Update: {
-          employee_id?: string
-          name?: string
-          updated_at?: string
-        }
-      }
+          employee_id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+      };
       shifts: {
         Row: {
-          id: string
-          member_id: string
-          date: string // YYYY-MM-DD
-          shift_type: string
-          created_at: string
-          updated_at: string
-        }
+          id: string;
+          member_id: string;
+          date: string; // YYYY-MM-DD
+          shift_type: string;
+          created_at: string;
+          updated_at: string;
+        };
         Insert: {
-          id?: string
-          member_id: string
-          date: string
-          shift_type: string
-          created_at?: string
-          updated_at?: string
-        }
+          id?: string;
+          member_id: string;
+          date: string;
+          shift_type: string;
+          created_at?: string;
+          updated_at?: string;
+        };
         Update: {
-          member_id?: string
-          date?: string
-          shift_type?: string
-          updated_at?: string
-        }
-      }
-    }
-  }
+          member_id?: string;
+          date?: string;
+          shift_type?: string;
+          updated_at?: string;
+        };
+      };
+    };
+  };
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
   throw new Error(
-    "Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Please check your .env file.",
-  )
+    "Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Please check your .env file."
+  );
 }
 
 if (!supabaseAnonKey) {
   throw new Error(
-    "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Please check your .env file.",
-  )
+    "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. Please check your .env file."
+  );
 }
 
-let browserClient: ReturnType<typeof createClient<Database>> | undefined
+let browserClient: ReturnType<typeof createClient<Database>> | undefined;
 
 export const supabase = (() => {
   if (typeof window === "undefined") {
@@ -77,7 +77,7 @@ export const supabase = (() => {
         persistSession: false,
         autoRefreshToken: false,
       },
-    })
+    });
   }
 
   // Client-side: use singleton pattern
@@ -89,7 +89,7 @@ export const supabase = (() => {
         detectSessionInUrl: true,
         flowType: "pkce",
       },
-    })
+    });
 
     // Add some debugging for auth state changes
     browserClient.auth.onAuthStateChange((event, session) => {
@@ -97,13 +97,15 @@ export const supabase = (() => {
         userId: session?.user?.id,
         hasAccessToken: !!session?.access_token,
         expiresAt: session?.expires_at,
-        isExpired: session?.expires_at ? session.expires_at * 1000 < Date.now() : "unknown",
-      })
-    })
+        isExpired: session?.expires_at
+          ? session.expires_at * 1000 < Date.now()
+          : "unknown",
+      });
+    });
   }
-  return browserClient
-})()
+  return browserClient;
+})();
 
-export type { Session, User }
-export type Member = Database["public"]["Tables"]["members"]["Row"]
-export type Shift = Database["public"]["Tables"]["shifts"]["Row"]
+export type { Session, User };
+export type Member = Database["public"]["Tables"]["members"]["Row"];
+export type Shift = Database["public"]["Tables"]["shifts"]["Row"];
