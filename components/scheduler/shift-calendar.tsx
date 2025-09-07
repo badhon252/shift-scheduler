@@ -63,8 +63,9 @@ export function ShiftCalendar({
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
+  // Use UTC dates to avoid timezone issues
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
 
   console.log("Calendar Info:", {
     year,
@@ -84,10 +85,20 @@ export function ShiftCalendar({
       return null;
     }
 
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
-    console.log(`Generated date string for day ${day}:`, dateStr);
+    // Create a Date object and extract components to handle month/year boundaries correctly
+    // Use UTC to avoid timezone issues
+    const date = new Date(Date.UTC(year, month, day));
+    const dateStr = date.toISOString().split("T")[0];
+    console.log(`Generated date string for day ${day}:`, {
+      input: { year, month, day },
+      date: date.toISOString(),
+      dateStr,
+      utcComponents: {
+        year: date.getUTCFullYear(),
+        month: date.getUTCMonth() + 1,
+        day: date.getUTCDate(),
+      },
+    });
     return dateStr;
   };
 
@@ -266,9 +277,12 @@ export function ShiftCalendar({
                           </div>
                           {shift.shift_type.includes("Shift") && (
                             <div className="text-xs opacity-90">
-                              {shift.shift_type.includes("Morning")}
-                              {shift.shift_type.includes("Evening")}
-                              {shift.shift_type.includes("Night")}
+                              {shift.shift_type.includes("Morning") &&
+                                "7:00 AM - 3:00 PM"}
+                              {shift.shift_type.includes("Evening") &&
+                                "2:50 PM - 11:00 PM"}
+                              {shift.shift_type.includes("Night") &&
+                                "10:30 PM - 7:00 AM"}
                             </div>
                           )}
                         </div>
@@ -521,9 +535,9 @@ export function ShiftCalendar({
               </div>
               {!isMobile && shift.shift_type.includes("Shift") && (
                 <div className="text-[10px] opacity-90 mt-1">
-                  {shift.shift_type.includes("Morning")}
-                  {shift.shift_type.includes("Evening")}
-                  {shift.shift_type.includes("Night")}
+                  {shift.shift_type.includes("Morning") && "7:00 AM - 3:00 PM"}
+                  {shift.shift_type.includes("Evening") && "2:50 PM - 11:00 PM"}
+                  {shift.shift_type.includes("Night") && "10:30 PM - 7:00 AM"}
                 </div>
               )}
             </div>
